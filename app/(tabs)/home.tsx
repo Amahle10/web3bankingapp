@@ -1,59 +1,191 @@
-// app/(tabs)/home.tsx
-import React, { useContext } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
+import React, { useContext, useRef, useEffect, useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  Image,
+  FlatList,
+  Animated,
+  Easing,
+  Dimensions,
+} from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+
 import { UserContext } from "../../src/context/UserContext";
 import { useRouter } from "expo-router";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+
+const screenHeight = Dimensions.get("window").height;
+
+interface QuickAction {
+  id: string;
+  title: string;
+  icon: JSX.Element;
+  route: string;
+}
+
+interface Promotion {
+  id: string;
+  image: { uri: string };
+}
 
 export default function Home() {
   const { user } = useContext(UserContext);
   const router = useRouter();
 
+  // 🔥 Curtain Dropdown Animation
+  const dropAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.timing(dropAnim, {
+      toValue: 1,
+      duration: 900,
+      easing: Easing.out(Easing.exp),
+      useNativeDriver: false,
+    }).start();
+  }, []);
+
+  // Quick Actions
+  const actions: QuickAction[] = [
+    {
+      id: "1",
+      title: "Profile",
+      icon: <Ionicons name="person-circle-outline" size={28} color="#fff" />,
+      route: "/profile",
+    },
+    {
+      id: "2",
+      title: "Settings",
+      icon: <Ionicons name="settings-outline" size={28} color="#fff" />,
+      route: "/settings",
+    },
+    {
+      id: "3",
+      title: "Wallet",
+      icon: <MaterialCommunityIcons name="wallet-outline" size={28} color="#fff" />,
+      route: "/wallet",
+    },
+    {
+      id: "4",
+      title: "Transact",
+      icon: <Ionicons name="send-outline" size={28} color="#fff" />,
+      route: "/transact",
+    },
+  ];
+
+  const promotions: Promotion[] = [
+    { id: "1", image: { uri: "https://images.unsplash.com/photo-1523759533935-e4b770303b1d?w=800" } },
+    { id: "2", image: { uri: "https://images.unsplash.com/photo-1577742410730-a83c01f60d8e?w=800" } },
+    { id: "3", image: { uri: "https://images.unsplash.com/photo-1518688248740-7c31f1a945c4?w=800" } },
+    { id: "4", image: { uri: "https://images.unsplash.com/photo-1664455340023-214c33a9d0bd?w=800" } },
+    { id: "5", image: { uri: "https://images.unsplash.com/photo-1556742031-c6961e8560b0?w=800" } },
+    { id: "6", image: { uri: "https://images.unsplash.com/photo-1566563255308-753861417000?w=800" } },
+  ];
+
+  // Scale animation for press effect
+  const [pressedIndex, setPressedIndex] = useState<string | null>(null);
+
+
+  const capitalize = (str: string) =>
+  str ? str.charAt(0).toUpperCase() + str.slice(1).toLowerCase() : "";
+
+
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
-        {/* App Info */}
-        <View style={styles.appInfo}>
-          <Text style={styles.appName}>Gibi Wallet</Text>
-          <Text style={styles.appVersion}>v1.0.0</Text>
-          <Text style={styles.appTagline}>Smart, Secure & Fast Fintech</Text>
-        </View>
 
-        {/* Big greeting */}
-        <Text style={styles.bigHi}>Hi {user?.name ?? "User"}</Text>
+        {/* 🔥 Dropdown Curtain Header */}
+        <Animated.View
+          style={[
+            styles.dropdownWrapper,
+            {
+              height: dropAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0, screenHeight * 0.3],
+              }),
+              opacity: dropAnim,
+            },
+          ]}
+        >
+          <Text style={styles.dropdownLabel}>Gibi</Text>
+          <Text style={styles.dropdownSubLabel}>Smart Banking • Secure • Instant</Text>
+
+        </Animated.View>
+
+        {/* Greeting */}
+        <Text style={styles.bigHi}>Hi {capitalize(user?.name ?? "User")}</Text>
         <Text style={styles.subtitle}>Welcome back!</Text>
 
-        {/* Quick action buttons */}
-        <View style={styles.quickActions}>
-          <TouchableOpacity style={styles.btn} onPress={() => router.push("/profile")}>
-            <Ionicons name="person-circle-outline" size={24} color="#E0E0E0" style={{ marginBottom: 6 }} />
-            <Text style={styles.btnText}>Profile</Text>
-          </TouchableOpacity>
+        {/* Quick Actions */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.quickActionsContainer}
+        >
+          {actions.map((item, index) => {
+            const scale = pressedIndex === item.id ? 0.95 : 1;
+            return (
+              <Animated.View key={item.id} style={{ transform: [{ scale }], marginRight: 16 }}>
+                <TouchableOpacity
+                  activeOpacity={0.9}
+                  onPressIn={() => setPressedIndex(item.id)}
+                  onPressOut={() => setPressedIndex(null)}
+                  onPress={() => router.push(item.route)}
+                >
+                  <LinearGradient
+                    colors={["#1F7C7A", "#488792"]}
+                    start={[0, 0]}
+                    end={[1, 1]}
+                    style={styles.quickBtn}
+                  >
+                    {item.icon}
+                  </LinearGradient>
+                  <Text style={styles.quickBtnText}>{item.title}</Text>
+                </TouchableOpacity>
+              </Animated.View>
+            );
+          })}
+        </ScrollView>
 
-          <TouchableOpacity style={styles.btn} onPress={() => router.push("/settings")}>
-            <Ionicons name="settings-outline" size={24} color="#E0E0E0" style={{ marginBottom: 6 }} />
-            <Text style={styles.btnText}>Settings</Text>
-          </TouchableOpacity>
+        {/* ⭐ Spend & Explore */}
+        <Text style={styles.sectionTitle}>Spend</Text>
 
-          <TouchableOpacity style={styles.btn} onPress={() => router.push("/wallet")}>
-            <MaterialCommunityIcons name="wallet-outline" size={24} color="#E0E0E0" style={{ marginBottom: 6 }} />
-            <Text style={styles.btnText}>Wallet</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.btn} onPress={() => router.push("/transact")}>
-            <Ionicons name="send-outline" size={24} color="#E0E0E0" style={{ marginBottom: 6 }} />
-            <Text style={styles.btnText}>Transact</Text>
-          </TouchableOpacity>
+        <View style={styles.spendGrid}>
+          {[
+            { id: "1", title: "Electricity", icon: "flash-outline" },
+            { id: "2", title: "Airtime & Data", icon: "phone-portrait-outline" },
+            { id: "3", title: "Vouchers", icon: "gift-outline" },
+            { id: "4", title: "Pay Bills", icon: "document-text-outline" },
+            { id: "5", title: "Send Money", icon: "send-outline" },
+            { id: "6", title: "Transport", icon: "bus-outline" },
+          ].map((item) => (
+            <TouchableOpacity key={item.id} style={styles.spendTile}>
+              <Ionicons name={item.icon} size={26} color="#0F3D3E" />
+              <Text style={styles.spendTileText}>{item.title}</Text>
+            </TouchableOpacity>
+          ))}
         </View>
+      <Text style={styles.sectionTitle}>Explore</Text>
 
-        {/* AI Assistant Info */}
-        <View style={styles.footer}>
-          <Text style={styles.footerTitle}>AI Assistance</Text>
-          <Text style={styles.footerText}>
-            Gibi AI helps you manage your finances, provides smart suggestions, 
-            and keeps your wallet secure. Available 24/7.
+
+        {/* AI Assistance */}
+        <View style={styles.aiContainer}>
+          <Text style={styles.aiTitle}>AI Assistance</Text>
+          <Text style={styles.aiText}>
+            Gibi AI helps you spend smarter, save better, and stay secure.
           </Text>
+
+          <TouchableOpacity
+            style={styles.aiBtn}
+            onPress={() => router.push("/aichatbot")}
+          >
+            <Ionicons name="chatbubble-ellipses-outline" size={20} color="#0F3D3E" />
+            <Text style={styles.aiBtnText}>Open AI Chat</Text>
+          </TouchableOpacity>
         </View>
+
       </ScrollView>
     </View>
   );
@@ -62,81 +194,204 @@ export default function Home() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0F3D3E", // deep blue-green metallic
+    backgroundColor: "#cbd0d8ff", // mostly white
   },
-  appInfo: {
-    marginTop: 60,
-    marginBottom: 40,
+
+  dropdownWrapper: {
+    width: "100%",
+    backgroundColor: "#01532dff",
+    justifyContent: "center",
     alignItems: "center",
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+    marginBottom: 25,
+    shadowColor: "#2b2e2dff",
+    shadowOpacity: 0.4,
+    shadowRadius: 10,
+    elevation: 10,
   },
-  appName: {
-    fontSize: 28,
+  dropdownLabel: {
+    fontSize: 30,
     fontWeight: "900",
-    color: "#E0E0E0",
+    fontFamily: "System",
+    color: "#ffffffff",
+    textTransform: "uppercase",
+    letterSpacing: 2,
   },
-  appVersion: {
-    fontSize: 14,
-    color: "#A0A0A0",
-    marginTop: 2,
-  },
-  appTagline: {
-    fontSize: 16,
-    color: "#00FFD5",
-    marginTop: 4,
-    fontWeight: "600",
-  },
+
   bigHi: {
-    fontSize: 36,
-    fontWeight: "900",
-    color: "#E0E0E0",
-    textShadowColor: "#00FFD5",
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 4,
+    fontSize: 34,
+    fontWeight: "700",
+    fontFamily: "System",
+    color: "#111",
     marginHorizontal: 20,
   },
   subtitle: {
-    fontSize: 18,
-    color: "#A0A0A0",
-    marginTop: 8,
+    fontSize: 16,
+    fontWeight: "400",
+    fontFamily: "System",
+    color: "#333",
+    marginTop: 4,
+    marginBottom: 25,
+    marginHorizontal: 20,
+  },
+
+  quickActionsContainer: {
+    paddingLeft: 20,
     marginBottom: 30,
-    marginHorizontal: 20,
   },
-  quickActions: {
-    marginHorizontal: 20,
-    flexDirection: "column",
-  },
-  btn: {
-    backgroundColor: "#1F7C7A", // teal metallic
-    paddingVertical: 16,
-    borderRadius: 12,
-    marginBottom: 16,
+  quickBtn: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     alignItems: "center",
-    shadowColor: "#00FFD5",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.15,
     shadowRadius: 6,
+    elevation: 5,
   },
-  btnText: {
-    color: "#E0E0E0",
+  quickBtnText: {
+    color: "#fff",
+    fontSize: 12,
+    fontWeight: "600",
+    fontFamily: "System",
+    marginTop: 6,
+    textAlign: "center",
+  },
+
+  sectionTitle: {
+    color: "#111",
+    fontSize: 20,
+    fontWeight: "700",
+    fontFamily: "System",
+    marginLeft: 20,
+    marginBottom: 12,
+  },
+  promoCard: {
+    width: 180,
+    height: 120,
+    borderRadius: 18,
+    backgroundColor: "#F0F0F0",
+    marginRight: 18,
+    overflow: "hidden",
+  },
+  promoImage: {
+    width: "100%",
+    height: "100%",
+    resizeMode: "cover",
+  },
+
+  aiContainer: {
+    margin: 20,
+    padding: 20,
+    backgroundColor: "#F5F5F5",
+    borderRadius: 20,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+  },
+  aiTitle: {
     fontSize: 18,
     fontWeight: "700",
+    fontFamily: "System",
+    color: "#1F7C7A",
+    marginBottom: 8,
   },
-  footer: {
-    marginTop: 40,
-    marginHorizontal: 20,
-    padding: 16,
-    backgroundColor: "#1A4F4F",
-    borderRadius: 12,
-  },
-  footerTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#00FFD5",
-    marginBottom: 4,
-  },
-  footerText: {
+  aiText: {
+    color: "#111",
     fontSize: 14,
-    color: "#E0E0E0",
-    lineHeight: 20,
+    fontWeight: "400",
+    fontFamily: "System",
+    lineHeight: 22,
+    marginBottom: 14,
   },
+  aiBtn: {
+    flexDirection: "row",
+    backgroundColor: "#1F7C7A",
+    paddingVertical: 12,
+    borderRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  aiBtnText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "700",
+    fontFamily: "System",
+    marginLeft: 6,
+  },
+
+  dropdownSubLabel: {
+  fontSize: 12,
+  fontWeight: "400",
+  color: "#ffffffcc",
+  marginTop: -5,
+  letterSpacing: 1,
+  fontFamily: "System",
+},
+
+
+/* Spend Grid */
+spendGrid: {
+  flexDirection: "row",
+  flexWrap: "wrap",
+  justifyContent: "space-between",
+  paddingHorizontal: 20,
+  marginBottom: 30,
+},
+
+spendTile: {
+  width: "30%",
+  backgroundColor: "#fff",
+  borderRadius: 14,
+  paddingVertical: 18,
+  alignItems: "center",
+  marginBottom: 18,
+  shadowColor: "#000",
+  shadowOpacity: 0.08,
+  shadowRadius: 6,
+  elevation: 3,
+},
+
+spendTileText: {
+  marginTop: 6,
+  fontSize: 12,
+  fontWeight: "600",
+  color: "#0F3D3E",
+  textAlign: "center",
+},
+
+/* Explore Cards */
+exploreCard: {
+  width: 200,
+  height: 130,
+  borderRadius: 16,
+  backgroundColor: "#ccc",
+  marginRight: 18,
+  overflow: "hidden",
+  position: "relative",
+},
+
+exploreImage: {
+  width: "100%",
+  height: "100%",
+  resizeMode: "cover",
+},
+
+exploreOverlay: {
+  position: "absolute",
+  bottom: 0,
+  width: "100%",
+  padding: 12,
+  backgroundColor: "rgba(0,0,0,0.45)",
+},
+
+exploreTitle: {
+  color: "#fff",
+  fontSize: 16,
+  fontWeight: "700",
+},
+
 });
+
