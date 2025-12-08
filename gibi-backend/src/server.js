@@ -5,6 +5,7 @@ import connectDB from "./config/db.js";
 import userRoutes from "./routes/userRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import walletRoutes from "./routes/walletRoutes.js";
+import depositRoutes from "./routes/depositRoutes.js";
 
 
 
@@ -25,6 +26,7 @@ app.get("/", (req, res) => {
 // API routes
 app.use("/api/users", userRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/api/deposits", depositRoutes);
 
 app.use("/api/wallet", walletRoutes);
 const PORT = process.env.PORT || 5000;

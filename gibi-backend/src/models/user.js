@@ -8,6 +8,9 @@ const userSchema = new mongoose.Schema({
   pin: String,
   walletAddress: String,
   encryptedPrivateKey: String,
+  balance: { type: Number, default: 0 }, // <-- add this
+  balanceHistory: { type: [Number], default: [] },
+
 });
 
 userSchema.methods.matchPassword = async function (enteredPassword) {
